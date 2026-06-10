@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prova Completa Interativa - Freud</title>
+  <style>
+    :root {
+      --bg:#f2eee6; --paper:#fffdf8; --ink:#28231d; --muted:#6f675b;
+      --line:#ded3c2; --accent:#7d3b2f; --teal:#286b68;
+      --right:#247245; --wrong:#aa322d; --right-bg:#e7f3eb; --wrong-bg:#f8e7e4;
+      --quote:#f7f0e5; --note:#fff4d8;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:Arial, Helvetica, sans-serif; line-height:1.55; }
+    header { background:#3c3027; color:#fff8ed; padding:28px 16px 24px; }
+    .wrap { width:min(1080px, calc(100% - 28px)); margin:0 auto; }
+    h1 { margin:0 0 8px; font-size:clamp(1.55rem,2.7vw,2.55rem); letter-spacing:0; }
+    h2 { margin:30px 0 12px; font-size:1.28rem; color:#40342b; }
+    h3 { margin:18px 0 8px; font-size:1.06rem; }
+    .sub { margin:0; color:#e8dccd; max-width:900px; }
+    .bar { position:sticky; top:0; z-index:5; background:rgba(242,238,230,.94); border-bottom:1px solid var(--line); backdrop-filter:blur(10px); padding:12px 0; }
+    .bar-row,.filters,.actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .bar-row { justify-content:space-between; }
+    button { border:1px solid var(--line); border-radius:7px; background:var(--paper); color:var(--ink); padding:9px 12px; font:inherit; cursor:pointer; }
+    button:hover { border-color:#b8a995; }
+    button.active,.primary { background:var(--accent); color:white; border-color:var(--accent); }
+    .score { color:var(--teal); font-weight:700; white-space:nowrap; }
+    main { padding:20px 0 44px; }
+    .intro,.card,.essay { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:18px; box-shadow:0 14px 35px rgba(44,34,24,.1); }
+    .intro { margin-bottom:16px; }
+    .grid { display:grid; gap:14px; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; color:var(--muted); font-size:.9rem; }
+    .tag { border:1px solid var(--line); border-radius:999px; padding:2px 8px; background:#f7f2ea; }
+    .excerpt { margin:0 0 12px; padding:12px; border-left:4px solid #b9906e; background:var(--quote); border-radius:6px; color:#3c332b; }
+    .qtext { margin:0 0 14px; font-size:1.02rem; }
+    .choices { display:grid; grid-template-columns:repeat(2,minmax(100px,1fr)); gap:8px; max-width:330px; }
+    .choice { min-height:42px; background:#fffaf0; text-align:center; font-weight:700; }
+    .choice.correct { border-color:var(--right); background:var(--right-bg); color:#123f25; }
+    .choice.incorrect { border-color:var(--wrong); background:var(--wrong-bg); color:#681a17; }
+    .feedback { display:none; margin-top:12px; padding:12px; border-radius:7px; border:1px solid var(--line); background:#f7f2ea; }
+    .feedback.show { display:block; }
+    .feedback.right { border-color:var(--right); background:var(--right-bg); }
+    .feedback.wrong { border-color:var(--wrong); background:var(--wrong-bg); }
+    .case-text { background:#fbf6ee; border:1px solid var(--line); border-radius:7px; padding:14px; margin:12px 0 16px; }
+    .prompts { background:var(--note); border:1px solid #e2c678; border-radius:7px; padding:14px; }
+    textarea { width:100%; min-height:360px; resize:vertical; border:1px solid var(--line); border-radius:7px; padding:12px; background:#fffaf0; color:var(--ink); font:inherit; }
+    .rubric { display:grid; gap:8px; margin:14px 0; }
+    .rubric label { display:flex; gap:8px; align-items:flex-start; padding:8px; border:1px solid var(--line); border-radius:7px; background:#fbf6ee; }
+    .model { display:none; margin-top:12px; background:var(--note); border:1px solid #e2c678; border-radius:7px; padding:14px; }
+    .model.show { display:block; }
+    @media(max-width:720px){ .filters,.actions,.score{width:100%;} button{flex:1 1 auto;} .choices{max-width:none;} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Prova Completa Interativa - Freud</h1>
+      <p class="sub">Questões longas no estilo do professor, com correção automática, e uma parte escrita grande de estudo de caso para treinar resposta discursiva.</p>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="wrap bar-row">
+      <div class="filters">
+        <button class="active" data-filter="all">Tudo</button>
+        <button data-filter="Cinco Lições">Cinco Lições</button>
+        <button data-filter="Pulsão">Pulsão</button>
+        <button data-filter="Narcisismo">Narcisismo</button>
+        <button data-filter="Segunda Tópica">Segunda Tópica</button>
+      </div>
+      <div class="actions">
+        <span class="score" id="score">0 certas de 0 respondidas</span>
+        <button id="jump-essay">Ir para escrita</button>
+        <button id="reset">Recomeçar</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <section class="intro">
+      <strong>Importante:</strong> esta versão tem perguntas maiores e mais elaboradas. Leia o trecho-base e julgue a afirmativa. Muitas estão escritas para parecerem verdadeiras, mas trocam uma relação conceitual.
+    </section>
+
+    <div id="quiz" class="grid"></div>
+
+    <section class="essay" id="essay">
+      <h2>Parte escrita - estudo de caso</h2>
+      <p><strong>Orientação:</strong> responda em texto corrido, como em prova. Tente escrever de 4 a 6 parágrafos. Depois use a correção automática e a checklist.</p>
+
+      <div class="case-text">
+        <p><strong>Caso clínico:</strong> Helena, 24 anos, estudante de Psicologia, procura atendimento por crises de angústia que começaram no semestre em que passou a estudar Freud. Ela relata que consegue ler os textos, sublinhar conceitos e explicar oralmente o conteúdo, mas trava quando precisa escrever sobre sexualidade infantil, desejo, inconsciente e conflito psíquico. Ao tentar produzir trabalhos, sente aperto no peito, dor no estômago e uma espécie de "branco", como se não pudesse colocar certas ideias no papel.</p>
+        <p>Helena cresceu em uma família muito exigente, na qual o bom desempenho escolar era visto como obrigação moral. O pai costumava dizer que "pensamentos errados revelam caráter fraco" e a mãe valorizava muito a imagem de filha responsável, discreta e obediente. Helena afirma que ama os pais e que não deseja magoá-los, mas, ao mesmo tempo, sente raiva quando percebe que ainda organiza sua vida para receber aprovação deles. Quando fala dessa raiva, ri rapidamente e diz: "não tenho motivo para reclamar, fui criada muito bem".</p>
+        <p>Nos últimos meses, Helena se aproximou de uma colega, Júlia, que descreve como livre, inteligente e corajosa. Diz que sente admiração por ela, mas fica incomodada quando Júlia se aproxima de outras pessoas. Em algumas ocasiões, evita responder mensagens, falta a encontros do grupo e depois se culpa, dizendo que está sendo infantil e egoísta. Helena insiste que "não existe desejo nenhum nisso", mas fica em silêncio quando a analista pergunta o que a palavra desejo lhe faz pensar.</p>
+        <p>Ela relata sonhos repetidos. Em um sonho, está diante de uma banca avaliadora e entrega uma folha em branco. Em outro, tenta esconder um livro dentro de uma gaveta, mas a gaveta permanece aberta. Em um terceiro, entra em uma igreja usando roupas que considera inadequadas e todos a observam. Ao acordar, sente vergonha e culpa, embora diga que os sonhos "não fazem sentido". Nas aulas, passa a evitar textos que mencionem recalque, pulsão e narcisismo, mas sente alívio quando consegue falar sobre esses temas de forma impessoal, como se fossem apenas definições teóricas.</p>
+        <p>Na relação com a analista, Helena frequentemente pergunta se está "respondendo certo" e se seus pensamentos são normais. Às vezes, diz sentir-se compreendida; em outros momentos, teme que a analista a julgue. Quando percebe que chorou durante a sessão, pede desculpas e diz que precisa ser mais racional. Ela afirma que quer se livrar da angústia rapidamente, mas também diz que talvez esteja começando a perceber que seus sintomas têm relação com algo que ainda não consegue admitir.</p>
+      </div>
+
+      <div class="prompts">
+        <h3>Perguntas que sua resposta deve contemplar</h3>
+        <ol>
+          <li>Como a primeira tópica ajuda a pensar o caso: consciente, pré-consciente, inconsciente e recalque?</li>
+          <li>Como a segunda tópica aparece: ID, EGO e SUPEREGO?</li>
+          <li>Como interpretar a angústia, o bloqueio de escrita e os sintomas corporais?</li>
+          <li>O que os sonhos podem indicar como formações do inconsciente?</li>
+          <li>Como a transferência aparece na relação com a analista?</li>
+          <li>Use pelo menos dois conceitos extras: pulsão, objeto, narcisismo, ideal do eu, sublimação ou resistência.</li>
+        </ol>
+      </div>
+
+      <h3>Sua resposta</h3>
+      <textarea id="essay-answer" placeholder="Escreva aqui sua resposta completa. Tente articular os conceitos ao caso, não apenas definir os termos."></textarea>
+      <div class="actions" style="margin-top:10px;">
+        <button class="primary" id="auto-essay">Corrigir minha escrita</button>
+        <button id="rubric-score">Calcular checklist</button>
+        <button id="show-model">Mostrar modelo</button>
+      </div>
+      <div class="feedback" id="essay-feedback"></div>
+
+      <h3>Checklist de correção</h3>
+      <div class="rubric" id="rubric">
+        <label><input type="checkbox" value="5"> Expliquei conflito entre desejo, censura e proibição moral.</label>
+        <label><input type="checkbox" value="5"> Usei primeira tópica e expliquei recalque/retorno indireto.</label>
+        <label><input type="checkbox" value="5"> Diferenciei ID, EGO e SUPEREGO no caso.</label>
+        <label><input type="checkbox" value="5"> Expliquei angústia, bloqueio e sintomas como expressões de conflito.</label>
+        <label><input type="checkbox" value="5"> Interpretei os sonhos como formações do inconsciente.</label>
+        <label><input type="checkbox" value="5"> Usei transferência na relação com a analista.</label>
+        <label><input type="checkbox" value="5"> Apliquei pelo menos dois conceitos extras ao caso.</label>
+        <label><input type="checkbox" value="5"> Evitei diagnóstico fechado e moralização.</label>
+      </div>
+      <div class="feedback" id="rubric-feedback"></div>
+
+      <div class="model" id="model">
+        <strong>Modelo de resposta:</strong>
+        <p>No caso de Helena, é possível observar um conflito psíquico entre desejos e afetos que ela não consegue reconhecer plenamente e exigências morais muito severas. Pela primeira tópica, parte do sofrimento aparece conscientemente como angústia, culpa, vergonha, bloqueio de escrita e sintomas corporais. Entretanto, o sentido desses afetos permanece em grande medida inconsciente. O recalque pode ser pensado como o processo que mantém afastadas da consciência representações ligadas ao desejo, à raiva dirigida à família e aos sentimentos ambivalentes por Júlia. Esses conteúdos retornam de modo indireto nos sonhos, nos sintomas, na evitação dos textos e no bloqueio diante da escrita.</p>
+        <p>Pela segunda tópica, o ID pode ser associado aos impulsos, desejos, ciúmes, agressividade e afetos que emergem em relação a Júlia e à própria autonomia. O SUPEREGO aparece nas exigências familiares de correção, obediência e desempenho, funcionando como instância crítica e punitiva. O EGO tenta mediar essas forças, mas, diante da intensidade do conflito, utiliza defesas como evitação, racionalização, negação e resistência. A angústia funciona como sinal de que o conflito entre desejo, defesa e proibição se tornou difícil de sustentar.</p>
+        <p>Os sonhos podem ser lidos como formações do inconsciente. A folha em branco remete ao bloqueio e ao medo de avaliação; a gaveta que não fecha sugere um conteúdo que Helena tenta esconder, mas que insiste em retornar; a igreja com roupas inadequadas articula vergonha, culpa e olhar moral do outro. A transferência aparece quando Helena busca aprovação da analista, teme julgamento e repete na relação analítica a posição de ser avaliada por uma autoridade. Assim, o caso deve ser lido pela articulação entre desejo, recalque, sintoma, superego e defesas do ego, sem reduzir o sofrimento a fraqueza moral ou diagnóstico fechado.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const questions = [
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: Freud apresenta a psicanálise a partir da história da histeria e do trabalho clínico de Breuer, destacando sintomas físicos e psíquicos que não se explicavam satisfatoriamente por lesões orgânicas.", text:"Considerando esse ponto de partida, é correto afirmar que Freud passa a valorizar a fala do paciente e a história do sintoma, pois certos fenômenos corporais poderiam estar ligados a lembranças, afetos e conflitos psíquicos não elaborados, e não apenas a uma causa orgânica imediata.", answer:"V", explain:"Correto. A clínica da histeria abre espaço para pensar o sintoma como formação psíquica."},
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: A paciente de Breuer apresentava sintomas graves, estados de ausência e alterações que pareciam desafiar o saber médico tradicional.", text:"A conclusão freudiana é que a histeria deveria ser tratada como simulação consciente, pois a ausência de lesão orgânica prova que o paciente fabrica voluntariamente os sintomas para obter atenção.", answer:"F", explain:"Falso. Freud não reduz a histeria a fingimento; investiga o sentido inconsciente dos sintomas."},
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: No método catártico, a recordação acompanhada de afeto permitia ligar sintomas a cenas esquecidas ou dissociadas.", text:"Esse modelo permite compreender que o desaparecimento ou alívio de certos sintomas dependia da possibilidade de estabelecer ligações entre afeto, lembrança e palavra, fazendo com que aquilo que estava isolado psiquicamente pudesse ser elaborado.", answer:"V", explain:"Correto. A ligação entre afeto, lembrança e fala é central nesse início da psicanálise."},
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: Freud se interessa por sonhos, atos falhos, esquecimentos e sintomas como manifestações indiretas do inconsciente.", text:"Sonhos e atos falhos são importantes porque demonstram, segundo Freud, que todo esquecimento é puramente neurológico e que a vida psíquica não sofre interferência de desejos ou conflitos inconscientes.", answer:"F", explain:"Falso. Sonhos e atos falhos podem expressar desejos e conflitos inconscientes."},
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: A resistência aparece quando determinados conteúdos se aproximam da consciência e encontram oposição.", text:"A resistência não deve ser descartada como obstáculo sem valor; ao contrário, pode indicar que o trabalho analítico se aproxima de conteúdos significativos, ligados a conflito, defesa e recalque.", answer:"V", explain:"Correto. Resistência é dado clínico importante."},
+      {cat:"Cinco Lições", excerpt:"Trecho-base adaptado: Freud discute sexualidade infantil, transferência e sublimação nas lições finais.", text:"Quando Freud fala em sexualidade infantil, ele afirma simplesmente que a criança possui sexualidade adulta completa; por isso, não haveria diferença entre sexualidade infantil, puberdade e escolha objetal adulta.", answer:"F", explain:"Falso. Sexualidade infantil envolve formas parciais, zonas erógenas e desenvolvimento."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: Em Os Instintos e suas Vicissitudes, a pulsão é definida como conceito situado na fronteira entre o somático e o psíquico.", text:"A pulsão pode ser entendida como uma exigência feita ao psiquismo a partir do corpo: ela possui fonte somática, produz pressão constante, busca satisfação e se liga a objetos que podem variar ao longo da vida do sujeito.", answer:"V", explain:"Correto. A questão articula fonte, pressão, finalidade e objeto."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: Freud diferencia estímulos externos e pulsões internas.", text:"Como a pulsão funciona como estímulo externo passageiro, basta que o sujeito fuja do objeto para eliminar definitivamente a tensão pulsional e encerrar o conflito psíquico.", answer:"F", explain:"Falso. A pulsão vem de dentro e atua como força constante."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: O objeto é descrito como o elemento mais variável da pulsão.", text:"Se o objeto da pulsão é variável, então ele não deve ser compreendido como biologicamente fixo; o sujeito pode buscar satisfação por caminhos substitutivos, deslocamentos e novas ligações objetais.", answer:"V", explain:"Correto. Essa é uma pegadinha frequente."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: Freud trabalha destinos da pulsão como reversão ao oposto, retorno contra a própria pessoa, recalque e sublimação.", text:"No recalque, o desejo é destruído e deixa de produzir efeitos; por isso, uma vez recalcado, não pode retornar em sonhos, sintomas, atos falhos ou angústia.", answer:"F", explain:"Falso. O recalcado retorna indiretamente."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: A sublimação permite que a energia pulsional encontre destino culturalmente valorizado.", text:"A sublimação não deve ser confundida com simples repressão moral: nela, a energia pulsional pode ser desviada para atividades como estudo, arte, trabalho e produção intelectual, obtendo outro tipo de satisfação.", answer:"V", explain:"Correto. Sublimação não é o mesmo que eliminar o desejo."},
+      {cat:"Pulsão", excerpt:"Trecho-base adaptado: A finalidade da pulsão é a satisfação, ainda que por caminhos indiretos.", text:"A finalidade da pulsão é sempre obedecer imediatamente à moral do sujeito; por isso, Freud afirma que a pulsão nasce organizada pelo superego e pela renúncia ao prazer.", answer:"F", explain:"Falso. A finalidade da pulsão é satisfação; moral e superego pertencem a outra problemática."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: Freud propõe que a libido pode investir o próprio eu ou objetos externos.", text:"A distinção entre libido do ego e libido de objeto ajuda a compreender movimentos de investimento e retirada libidinal, como ocorre na paixão, na doença orgânica e em certas formas de sofrimento psíquico.", answer:"V", explain:"Correto. Esse eixo aparece fortemente no texto sobre narcisismo."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: Freud afirma que o narcisismo reivindica um lugar no desenvolvimento sexual humano.", text:"O narcisismo, para Freud, é apenas uma perversão rara; por isso, não pode ser pensado como momento do desenvolvimento nem como investimento libidinal no próprio eu.", answer:"F", explain:"Falso. Freud pensa o narcisismo também como momento estrutural/desenvolvimental."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: Na doença orgânica, o sujeito pode retirar interesse do mundo externo e voltar-se para o próprio corpo.", text:"A doença orgânica permite observar que a distribuição da libido pode se alterar: o sujeito sofrendo tende a retirar investimentos do mundo externo e concentrar atenção e libido no próprio eu/corpo.", answer:"V", explain:"Correto. Esse exemplo é clássico no texto."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: Freud diferencia escolha objetal anaclítica e narcisista.", text:"Na escolha anaclítica, o amor pode se apoiar em figuras de cuidado; na escolha narcisista, pode-se amar aquilo que se é, foi, gostaria de ser ou alguém que foi parte de si.", answer:"V", explain:"Correto. Boa formulação para prova."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: Freud discute autoestima, paixão e movimentos libidinais do eu.", text:"Na paixão amorosa, Freud afirma que o eu sempre se fortalece, pois todo investimento no objeto amado aumenta automaticamente a autoestima e elimina qualquer dependência do amor do outro.", answer:"F", explain:"Falso. O investimento no objeto pode empobrecer o eu e tornar a autoestima dependente."},
+      {cat:"Narcisismo", excerpt:"Trecho-base adaptado: O ego não está dado de forma completa desde o início.", text:"Ao diferenciar autoerotismo e narcisismo, Freud indica que o ego precisa ser desenvolvido; algo se acrescenta ao autoerotismo para que se constitua o narcisismo.", answer:"V", explain:"Correto. Essa distinção é conceitualmente importante."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: Na segunda tópica, Freud organiza o aparelho psíquico em ID, EGO e SUPEREGO.", text:"O ID pode ser pensado como polo pulsional, ligado ao princípio do prazer e sem julgamento moral; já o SUPEREGO se relaciona a crítica, culpa, ideais e punição, enquanto o EGO tenta mediar conflitos e realidade.", answer:"V", explain:"Correto. Essa frase resume a segunda tópica para caso clínico."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: O SUPEREGO observa, critica e pune.", text:"O SUPEREGO corresponde à parte mais impulsiva e amoral da personalidade, responsável pela busca imediata de satisfação pulsional e pela recusa de qualquer limite.", answer:"F", explain:"Falso. Isso descreve o ID, não o SUPEREGO."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: O EGO se relaciona à realidade, defesa e mediação.", text:"Em um caso clínico, o EGO pode aparecer tentando administrar exigências pulsionais, proibições internas, medo de julgamento e condições da realidade, muitas vezes recorrendo a defesas como evitação e racionalização.", answer:"V", explain:"Correto. Esse é o tipo de aplicação esperada em questão discursiva."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: A angústia pode funcionar como sinal de conflito.", text:"Quando a angústia aparece diante de pensamentos inaceitáveis, Freud a entende sempre como prova de lesão orgânica, sem relação com desejo, defesa, recalque ou conflito psíquico.", answer:"F", explain:"Falso. A angústia pode sinalizar conflito psíquico."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: Sintomas, sonhos e atos falhos podem expressar o retorno indireto de conteúdos recalcados.", text:"Um sintoma não precisa ser lido como mensagem consciente do sujeito; ele pode funcionar como formação de compromisso, expressando indiretamente um conflito entre desejo e defesa.", answer:"V", explain:"Correto. Essa formulação é muito útil para estudo de caso."},
+      {cat:"Segunda Tópica", excerpt:"Trecho-base adaptado: A transferência atualiza, na relação analítica, afetos e modos de relação anteriores.", text:"Na transferência, os afetos dirigidos ao analista não têm qualquer relação com a história do sujeito, pois pertencem apenas à situação atual e devem ser ignorados na análise.", answer:"F", explain:"Falso. Transferência atualiza relações e afetos anteriores."}
+    ];
+
+    const quiz = document.getElementById("quiz");
+    const score = document.getElementById("score");
+    const answered = new Map();
+    let filter = "all";
+
+    function render() {
+      quiz.innerHTML = "";
+      questions.map((q,index)=>({...q,index})).filter(q=>filter==="all"||q.cat===filter).forEach(q=>{
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `<div class="meta"><span class="tag">${q.cat}</span><span class="tag">Questão ${q.index+1}</span><span class="tag">V/F elaborado</span></div><p class="excerpt">${q.excerpt}</p><p class="qtext">${q.text}</p>`;
+        const choices = document.createElement("div");
+        choices.className = "choices";
+        ["V","F"].forEach(value=>{
+          const btn = document.createElement("button");
+          btn.className = "choice";
+          btn.textContent = value;
+          btn.addEventListener("click",()=>choose(card,q,value,btn));
+          choices.appendChild(btn);
+        });
+        const feedback = document.createElement("div");
+        feedback.className = "feedback";
+        card.appendChild(choices);
+        card.appendChild(feedback);
+        quiz.appendChild(card);
+      });
+      updateScore();
+    }
+
+    function choose(card,q,value,btn) {
+      const right = value === q.answer;
+      answered.set(q.index,right);
+      card.querySelectorAll(".choice").forEach(button=>{
+        button.disabled = true;
+        if (button.textContent === q.answer) button.classList.add("correct");
+      });
+      if (!right) btn.classList.add("incorrect");
+      const feedback = card.querySelector(".feedback");
+      feedback.className = `feedback show ${right ? "right" : "wrong"}`;
+      feedback.textContent = `${right ? "Certo." : "Errado."} ${q.explain}`;
+      updateScore();
+    }
+
+    function updateScore() {
+      let correct = 0;
+      answered.forEach(v=>{ if(v) correct++; });
+      score.textContent = `${correct} certas de ${answered.size} respondidas`;
+    }
+
+    document.querySelectorAll("[data-filter]").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        document.querySelectorAll("[data-filter]").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    document.getElementById("jump-essay").addEventListener("click",()=>document.getElementById("essay").scrollIntoView({behavior:"smooth"}));
+
+    document.getElementById("reset").addEventListener("click",()=>{
+      answered.clear();
+      document.getElementById("essay-answer").value = "";
+      document.querySelectorAll("#rubric input").forEach(i=>i.checked=false);
+      document.getElementById("essay-feedback").className = "feedback";
+      document.getElementById("rubric-feedback").className = "feedback";
+      document.getElementById("model").className = "model";
+      render();
+      window.scrollTo({top:0,behavior:"smooth"});
+    });
+
+    document.getElementById("show-model").addEventListener("click",()=>document.getElementById("model").classList.toggle("show"));
+
+    document.getElementById("rubric-score").addEventListener("click",()=>{
+      const points = [...document.querySelectorAll("#rubric input:checked")].reduce((s,i)=>s+Number(i.value),0);
+      const box = document.getElementById("rubric-feedback");
+      box.className = "feedback show right";
+      box.textContent = `Nota estimada pela checklist: ${points}/40. Se ficou abaixo de 25, reescreva aplicando os conceitos diretamente ao caso.`;
+    });
+
+    document.getElementById("auto-essay").addEventListener("click",()=>{
+      const text = document.getElementById("essay-answer").value.toLowerCase();
+      const groups = [
+        ["recalque","recalc"],["inconsciente","primeira tópica","primeira topica"],["id"],["ego"],["superego","super ego"],
+        ["angústia","angustia","ansiedade"],["sintoma","aperto","estômago","estomago","bloqueio"],["sonho","sonhos"],
+        ["desejo","pulsão","pulsao","impulso"],["culpa","moral","proibição","proibicao","ideal"],["transferência","transferencia","analista"],
+        ["defesa","evitação","evitacao","racionalização","racionalizacao","negação","negacao"],["júlia","julia","objeto","ciúmes","ciumes"],
+        ["família","familia","pais"],["resistência","resistencia"]
+      ];
+      const found = groups.filter(words=>words.some(w=>text.includes(w)));
+      const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+      const estimate = Math.min(40, Math.round(found.length * 2.1 + (wordCount >= 260 ? 9 : wordCount >= 160 ? 5 : 0)));
+      const missing = groups.filter(words=>!words.some(w=>text.includes(w))).map(words=>words[0]);
+      const box = document.getElementById("essay-feedback");
+      box.className = "feedback show right";
+      box.innerHTML = `<strong>Correção automática aproximada: ${estimate}/40.</strong><br>Palavras: ${wordCount}. Conceitos detectados: ${found.length}/15.${wordCount >= 260 ? " O tamanho está bom para uma resposta de prova." : " Desenvolva mais; tente chegar perto de 260 palavras ou mais."}<br>${missing.length ? "Pode faltar: " + missing.slice(0,8).join(", ") + (missing.length > 8 ? "..." : "") + "." : "Você mencionou os principais eixos."}<br><br>Use a checklist e compare com o modelo.`;
+    });
+
+    render();
+  </script>
+</body>
+</html>
